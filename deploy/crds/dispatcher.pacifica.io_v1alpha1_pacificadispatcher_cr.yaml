@@ -1,0 +1,7 @@
+apiVersion: dispatcher.pacifica.io/v1alpha1
+kind: PacificaDispatcher
+metadata:
+  name: example-pacificadispatcher
+spec:
+  # Add fields here
+  size: 3

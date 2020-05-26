@@ -1,0 +1,5 @@
+---
+- version: v1alpha1
+  group: dispatcher.pacifica.io
+  kind: PacificaDispatcher
+  role: pacificadispatcher
