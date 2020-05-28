@@ -2,11 +2,9 @@
 - name: Build Operator in Kubernetes docker container
   hosts: k8s
   collections:
-   - community.kubernetes
-
+    - community.kubernetes
   vars:
     image: dispatcher.pacifica.io/pacifica-dispatcher-operator:testing
-
   tasks:
     # using command so we don't need to install any dependencies
     - name: Get existing image hash
@@ -21,17 +19,14 @@
       vars:
         hash: '{{ prev_hash_raw.stdout }}'
         cmd_out: '{{ "".join(build_cmd.stdout_lines[-2:]) }}'
-
 - name: Converge
   hosts: localhost
   connection: local
   collections:
-   - community.kubernetes
-
+    - community.kubernetes
   vars:
     image: dispatcher.pacifica.io/pacifica-dispatcher-operator:testing
     operator_template: "{{ '/'.join([template_dir, 'operator.yaml.j2']) }}"
-
   tasks:
     - name: Create the Operator Deployment
       k8s:
