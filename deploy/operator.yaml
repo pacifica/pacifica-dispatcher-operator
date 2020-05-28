@@ -20,8 +20,8 @@ spec:
           image: "REPLACE_IMAGE"
           imagePullPolicy: "Always"
           volumeMounts:
-          - mountPath: /tmp/ansible-operator/runner
-            name: runner
+            - mountPath: /tmp/ansible-operator/runner
+              name: runner
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

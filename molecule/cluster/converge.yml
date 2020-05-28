@@ -5,15 +5,47 @@
   gather_facts: no
   collections:
     - community.kubernetes
-
+  vars:
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+    operator_image: localhost:5000/pacifica/pacifica-dispatcher-operator:latest
   tasks:
-    - name: Ensure operator image is set
-      fail:
-        msg: |
-          You must specify the OPERATOR_IMAGE environment variable in order to run the
-          'cluster' scenario
-      when: not operator_image
-
+    - name: Create K8S local registry
+      k8s:
+        definition: "{{ lookup('template', '/'.join([deploy_dir, item])) }}"
+        namespace: 'kube-system'
+      with_items:
+        - registry-replicationcontroller.yaml
+        - registry-service.yaml
+        - registry-daemonset.yaml
+    - name: Setup Registry Port Forward
+      shell: |
+        kubectl port-forward \
+          --namespace kube-system \
+          $(kubectl get po -n kube-system | grep kube-registry-v0 | awk '{print $1;}') \
+          5000:5000
+      async: 2592000
+      poll: 0
+      notify: "Kill Registry Port Forward"
+    - name: Wait for Kubectl
+      command: sleep 3
+    - name: Kubectl Pids
+      pids:
+        name: kubectl
+      register: pids_of_kubectl
+    - name: Debug Registry Port Forward
+      debug:
+        msg: "{{ pids_of_kubectl }}"
+    - name: Build an image and push it to a private repo
+      docker_image:
+        build:
+          pull: yes
+          path: ../../
+          dockerfile: ./build/Dockerfile
+          nocache: yes
+        name: localhost:5000/pacifica/pacifica-dispatcher-operator
+        tag: latest
+        push: yes
+        source: build
     - name: Create the Operator Deployment
       k8s:
         namespace: '{{ namespace }}'
@@ -22,3 +54,7 @@
       vars:
         image: '{{ operator_image }}'
         pull_policy: '{{ operator_pull_policy }}'
+  handlers:
+    - name: Kill Registry Port Forward
+      command: "kill {{ item }}"
+      loop: "{{ pids_of_kubectl.pids }}"

@@ -6,10 +6,11 @@
   gather_facts: no
   collections:
     - community.kubernetes
-
   vars:
-    custom_resource: "{{ lookup('template', '/'.join([deploy_dir, 'crds/dispatcher.pacifica.io_v1alpha1_pacificadispatcher_cr.yaml'])) | from_yaml }}"
-
+    custom_resource: |
+      {{ lookup('template', '/'.join([
+        deploy_dir, 'crds/dispatcher.pacifica.io_v1alpha1_pacificadispatcher_cr.yaml'
+      ])) | from_yaml }}
   tasks:
     - name: Create the dispatcher.pacifica.io/v1alpha1.PacificaDispatcher and wait for reconciliation to complete
       k8s:
@@ -22,14 +23,12 @@
           type: Running
           reason: Successful
           status: "True"
-
     - name: Get Pods
       k8s_info:
         api_version: v1
         kind: Pod
         namespace: '{{ namespace }}'
       register: pods
-
     - name: Example assertion
       assert:
         that: (pods | length) > 0

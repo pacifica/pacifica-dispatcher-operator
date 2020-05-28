@@ -1,0 +1,41 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: 'postgresql'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:11
+          env:
+            - name: POSTGRES_USER
+              value: pacifica
+            - name: POSTGRES_PASSWORD
+              value: pacifica
+            - name: POSTGRES_DB
+              value: pacifica
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          ports:
+            - containerPort: 5432
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: pacificadb-pvc

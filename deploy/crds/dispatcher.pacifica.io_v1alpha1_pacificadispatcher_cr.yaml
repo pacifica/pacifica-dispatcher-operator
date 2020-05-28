@@ -4,4 +4,21 @@ metadata:
   name: example-pacificadispatcher
 spec:
   # Add fields here
-  size: 3
+  frontendSize: 1
+  backendSize: 2
+  secretName: dispatcher-secret
+  secretDbUrlKey: db_url
+  secretBrokerUrlKey: broker_url
+  sharedPvc: dispatcher-shared-pvc
+  backendImage: dmlb2000/dispatcher-podcast-backend:v0.1.2
+  frontendImage: dmlb2000/dispatcher-podcast-frontend:v0.1.2
+  frontendPort: 8080
+  backendCeleryApp: src.tasks
+  fronendWsgiMod: src.common:APPLICATION
+  initDbCmd: python create-db.py
+  waitServices:
+    - postgresql
+    - redis
+  env:
+    - name: SELF_URL
+      value: http://example-pacificadispatcher:8080

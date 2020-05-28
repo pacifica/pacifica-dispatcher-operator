@@ -1,2 +1,28 @@
 ---
 # defaults file for pacificadispatcher
+frontend_size: 1
+backend_size: 1
+env: []
+secret_name: dispatcher-secret
+secret_db_url_key: db_url
+secret_broker_url_key: broker_url
+shared_pvc: dispatcher-shared-pvc
+backend_image: pacifica/dispatcher-frontend-example:latest
+frontend_image: pacifica/dispatcher-frontend-example:latest
+frontend_port: 8080
+backend_celery_app: pacifica.dispatcher_example.__main__:celery_app
+fronend_wsgi_mod: pacifica.dispatcher_example.wsgi
+wait_services: []
+init_db_cmd: "/bin/true"
+
+__int_env:
+  - name: DB_URL
+    valueFrom:
+      secretKeyRef:
+        name: "{{ secret_name }}"
+        key: "{{ secret_db_url_key }}"
+  - name: BROKER_URL
+    valueFrom:
+      secretKeyRef:
+        name: "{{ secret_name }}"
+        key: "{{ secret_broker_url_key }}"

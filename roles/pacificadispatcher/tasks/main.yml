@@ -1,2 +1,124 @@
 ---
-# tasks file for pacificadispatcher
+- name: Define Pacifica Dispatcher Frontend
+  k8s:
+    definition:
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: '{{ meta.name }}-dispatcher-frontend'
+        namespace: '{{ meta.namespace }}'
+      spec:
+        replicas: "{{ frontend_size }}"
+        selector:
+          matchLabels:
+            app: "dispatcher-frontend"
+        template:
+          metadata:
+            labels:
+              app: "dispatcher-frontend"
+          spec:
+            containers:
+              - name: "dispatcher-frontend"
+                image: "{{ frontend_image }}"
+                env: "{{ env+__int_env }}"
+                command:
+                  - /usr/local/bin/uwsgi
+                  - --http-socket
+                  - "0.0.0.0:{{ frontend_port }}"
+                  - --master
+                  - --die-on-term
+                  - -p
+                  - '1'
+                  - --module
+                  - "{{ fronend_wsgi_mod }}"
+                volumeMounts:
+                  - name: shareddata
+                    mountPath: /srv
+                ports:
+                  - containerPort: 8080
+                #  - containerPort: '{{ frontend_port | int }}'
+                readinessProbe:
+                  httpGet:
+                    path: "/"
+                    port: 8080
+                    #port: '{{ frontend_port | int }}'
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+            initContainers:
+              - name: wait-for-services
+                image: busybox:1.28
+                env: "{{ env+__int_env }}"
+                command:
+                  - sh
+                  - -c
+                  - |
+                    {% for service in wait_services %}
+                    ns=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+                    until nslookup {{ service }}.${ns}.svc.cluster.local; do
+                      echo waiting for {{ service }}; sleep 2;
+                    done;
+                    {% endfor %}
+                    echo done;
+              - name: "init-dispatcherdb"
+                image: "{{ frontend_image }}"
+                env: "{{ env+__int_env }}"
+                command:
+                  - sh
+                  - -c
+                  - "{{ init_db_cmd }} && echo success; echo done;"
+                volumeMounts:
+                  - name: shareddata
+                    mountPath: /srv
+            volumes:
+              - name: shareddata
+                persistentVolumeClaim:
+                  claimName: "{{ shared_pvc }}"
+- name: Define Pacifica Dispatcher Backend
+  k8s:
+    definition:
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: '{{ meta.name }}-dispatcher-backend'
+        namespace: '{{ meta.namespace }}'
+      spec:
+        replicas: "{{ backend_size }}"
+        selector:
+          matchLabels:
+            app: "dispatcher-backend"
+        template:
+          metadata:
+            labels:
+              app: "dispatcher-backend"
+          spec:
+            containers:
+              - name: "dispatcher-backend"
+                image: "{{ backend_image }}"
+                env: "{{ env+__int_env }}"
+                command:
+                  - celery
+                  - -A
+                  - "{{ backend_celery_app }}"
+                  - worker
+                volumeMounts:
+                  - name: shareddata
+                    mountPath: /srv
+            initContainers:
+              - name: wait-for-services
+                image: busybox:1.28
+                env: "{{ env+__int_env }}"
+                command:
+                  - sh
+                  - -c
+                  - |
+                    {% for service in wait_services %}
+                    ns=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+                    until nslookup {{ service }}.${ns}.svc.cluster.local; do
+                      echo waiting for {{ service }}; sleep 2;
+                    done;
+                    {% endfor %}
+                    echo done;
+            volumes:
+              - name: shareddata
+                persistentVolumeClaim:
+                  claimName: "{{ shared_pvc }}"
