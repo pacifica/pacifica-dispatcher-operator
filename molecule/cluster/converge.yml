@@ -58,4 +58,3 @@
     - name: Kill Registry Port Forward
       command: "kill {{ item }}"
       loop: "{{ pids_of_kubectl.pids }}"
-

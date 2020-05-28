@@ -43,7 +43,6 @@ spec:
               name: registry
               protocol: TCP
       volumes:
-      - name: image-store
-        hostPath:
-          path: /data/registry/
-
+        - name: image-store
+          hostPath:
+            path: /data/registry/
