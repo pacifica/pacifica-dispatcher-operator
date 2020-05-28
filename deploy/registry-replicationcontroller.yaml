@@ -46,3 +46,4 @@ spec:
       - name: image-store
         hostPath:
           path: /data/registry/
+
