@@ -1,28 +1,35 @@
 ---
 # defaults file for pacificadispatcher
-frontend_size: 1
-backend_size: 1
+size: 1
 env: []
-secret_name: dispatcher-secret
-secret_db_url_key: db_url
-secret_broker_url_key: broker_url
+secret_name: notify-subscription-secret
+secret_url_key: url
+secret_auth_type_key: type
+secret_auth_basic_user_key: user
+secret_auth_basic_pass_key: pass
 shared_pvc: dispatcher-shared-pvc
-backend_image: pacifica/dispatcher-frontend-example:latest
-frontend_image: pacifica/dispatcher-frontend-example:latest
-frontend_port: 8080
-backend_celery_app: pacifica.dispatcher_example.__main__:celery_app
-fronend_wsgi_mod: pacifica.dispatcher_example.wsgi
+image: pacifica/dispatcher-k8s:v0.1.0
+command: ['pacifica-dispatcher-k8s']
 wait_services: []
-init_db_cmd: "/bin/true"
+setup_init_containers: []
+subscription:
+  name: notify-subscription-secret
+  jsonpath: '$.data'
+  target_url: http://dispatcher.example.com/receive
 
-__int_env:
-  - name: DB_URL
-    valueFrom:
-      secretKeyRef:
-        name: "{{ secret_name }}"
-        key: "{{ secret_db_url_key }}"
-  - name: BROKER_URL
-    valueFrom:
-      secretKeyRef:
-        name: "{{ secret_name }}"
-        key: "{{ secret_broker_url_key }}"
+__int_env: []
+__init_containers:
+  - name: wait-for-services
+    image: busybox:1.28
+    env: "{{ env+__int_env }}"
+    command:
+      - sh
+      - -c
+      - |
+        {% for service in wait_services %}
+        ns=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+        until nslookup {{ service }}.${ns}.svc.cluster.local; do
+          echo waiting for {{ service }}; sleep 2;
+        done;
+        {% endfor %}
+        echo done;

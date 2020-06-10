@@ -4,21 +4,32 @@ metadata:
   name: example-pacificadispatcher
 spec:
   # Add fields here
-  frontendSize: 1
-  backendSize: 2
-  secretName: dispatcher-secret
-  secretDbUrlKey: db_url
-  secretBrokerUrlKey: broker_url
+  size: 1
+  secretName: notify-subscription-secret
   sharedPvc: dispatcher-shared-pvc
-  backendImage: dmlb2000/dispatcher-podcast-backend:v0.1.2
-  frontendImage: dmlb2000/dispatcher-podcast-frontend:v0.1.2
-  frontendPort: 8080
-  backendCeleryApp: src.tasks
-  fronendWsgiMod: src.common:APPLICATION
-  initDbCmd: python create-db.py
-  waitServices:
-    - postgresql
-    - redis
+  image: pacifica/dispatcher-k8s:v0.1.0
+  waitServices: []
   env:
-    - name: SELF_URL
-      value: http://example-pacificadispatcher:8080
+    - name: UPLOAD_URL
+      value: http://localhost:8066/upload
+    - name: UPLOAD_STATUS_URL
+      value: http://localhost:8066/get_state
+    - name: UPLOAD_POLICY_URL
+      value: http://localhost:8181/uploader
+    - name: UPLOAD_VALIDATION_URL
+      value: http://localhost:8181/ingest
+    - name: DOWNLOAD_URL
+      value: http://localhost:8081
+    - name: DOWNLOAD_POLICY_URL
+      value: http://localhost:8181/status/transactions/by_id
+    - name: AUTHENTICATION_TYPE
+      value: None
+  subscription:
+    name: My Event Match
+    jsonpath: |
+      $[?(
+        @["cloudEventsVersion"] = "0.1" and
+        @["eventType"] = "org.pacifica.metadata.ingest"
+      )]
+    target_url: http://dispatcher:8069/receive
+  setupInitContainers: []
