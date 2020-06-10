@@ -5,120 +5,63 @@
       kind: Deployment
       apiVersion: apps/v1
       metadata:
-        name: '{{ meta.name }}-dispatcher-frontend'
+        name: '{{ meta.name }}-dispatcher'
         namespace: '{{ meta.namespace }}'
       spec:
-        replicas: "{{ frontend_size }}"
+        replicas: "{{ size }}"
         selector:
           matchLabels:
-            app: "dispatcher-frontend"
+            app: "dispatcher"
         template:
           metadata:
             labels:
-              app: "dispatcher-frontend"
+              app: "dispatcher"
           spec:
             containers:
-              - name: "dispatcher-frontend"
-                image: "{{ frontend_image }}"
+              - name: "dispatcher"
+                image: "{{ image }}"
                 env: "{{ env+__int_env }}"
-                command:
-                  - /usr/local/bin/uwsgi
-                  - --http-socket
-                  - "0.0.0.0:{{ frontend_port }}"
-                  - --master
-                  - --die-on-term
-                  - -p
-                  - '1'
-                  - --module
-                  - "{{ fronend_wsgi_mod }}"
+                command: "{{ command }}"
                 volumeMounts:
                   - name: shareddata
-                    mountPath: /srv
+                    mountPath: /data
                 ports:
-                  - containerPort: 8080
-                #  - containerPort: '{{ frontend_port | int }}'
+                  - containerPort: 8069
                 readinessProbe:
                   httpGet:
                     path: "/"
-                    port: 8080
-                    #port: '{{ frontend_port | int }}'
+                    port: 8069
                   initialDelaySeconds: 5
                   periodSeconds: 5
-            initContainers:
-              - name: wait-for-services
-                image: busybox:1.28
-                env: "{{ env+__int_env }}"
-                command:
-                  - sh
-                  - -c
-                  - |
-                    {% for service in wait_services %}
-                    ns=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-                    until nslookup {{ service }}.${ns}.svc.cluster.local; do
-                      echo waiting for {{ service }}; sleep 2;
-                    done;
-                    {% endfor %}
-                    echo done;
-              - name: "init-dispatcherdb"
-                image: "{{ frontend_image }}"
-                env: "{{ env+__int_env }}"
-                command:
-                  - sh
-                  - -c
-                  - "{{ init_db_cmd }} && echo success; echo done;"
-                volumeMounts:
-                  - name: shareddata
-                    mountPath: /srv
+            initContainers: "{{ __init_containers+setup_init_containers }}"
             volumes:
               - name: shareddata
                 persistentVolumeClaim:
                   claimName: "{{ shared_pvc }}"
-- name: Define Pacifica Dispatcher Backend
-  k8s:
-    definition:
-      kind: Deployment
-      apiVersion: apps/v1
-      metadata:
-        name: '{{ meta.name }}-dispatcher-backend'
-        namespace: '{{ meta.namespace }}'
-      spec:
-        replicas: "{{ backend_size }}"
-        selector:
-          matchLabels:
-            app: "dispatcher-backend"
-        template:
-          metadata:
-            labels:
-              app: "dispatcher-backend"
-          spec:
-            containers:
-              - name: "dispatcher-backend"
-                image: "{{ backend_image }}"
-                env: "{{ env+__int_env }}"
-                command:
-                  - celery
-                  - -A
-                  - "{{ backend_celery_app }}"
-                  - worker
-                volumeMounts:
-                  - name: shareddata
-                    mountPath: /srv
-            initContainers:
-              - name: wait-for-services
-                image: busybox:1.28
-                env: "{{ env+__int_env }}"
-                command:
-                  - sh
-                  - -c
-                  - |
-                    {% for service in wait_services %}
-                    ns=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-                    until nslookup {{ service }}.${ns}.svc.cluster.local; do
-                      echo waiting for {{ service }}; sleep 2;
-                    done;
-                    {% endfor %}
-                    echo done;
-            volumes:
-              - name: shareddata
-                persistentVolumeClaim:
-                  claimName: "{{ shared_pvc }}"
+- name: Get Notifications Secret
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ secret_name }}"
+    namespace: "{{ meta.namespace }}"
+  register: secret_result
+- name: Notification Subscription Basic Auth
+  block:
+    - name: Check Subscription
+      uri:
+        url: "{{ secret_result.resources[0][secret_url_key] }}/{{ secret_name }}"
+        password: "{{ secret_result.resources[0][secret_auth_basic_pass_key] }}"
+        user: "{{ secret_result.resources[0][secret_auth_basic_user_key] }}"
+      register: subscription_result
+    - name: Create Subscription
+      uri:
+        url: "{{ secret_result.resources[0][secret_url_key] }}/{{ secret_name }}"
+        password: "{{ secret_result.resources[0][secret_auth_basic_pass_key] }}"
+        user: "{{ secret_result.resources[0][secret_auth_basic_user_key] }}"
+        method: POST
+        body: "{{ subscription | to_json }}"
+        force_basic_auth: yes
+        status_code: 201
+        body_format: json
+      when: "subscription_result.status != 200"
+  when: "secret_result.resources[0][secret_auth_type_key] == 'basic'"
