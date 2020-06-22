@@ -49,19 +49,19 @@
   block:
     - name: Check Subscription
       uri:
-        url: "{{ secret_result.resources[0][secret_url_key] }}/{{ secret_name }}"
-        password: "{{ secret_result.resources[0][secret_auth_basic_pass_key] }}"
-        user: "{{ secret_result.resources[0][secret_auth_basic_user_key] }}"
+        url: "{{ secret_result.resources[0][secret_url_key] | b64decode }}/{{ secret_name }}"
+        password: "{{ secret_result.resources[0][secret_auth_basic_pass_key] | b64decode }}"
+        user: "{{ secret_result.resources[0][secret_auth_basic_user_key] | b64decode }}"
       register: subscription_result
     - name: Create Subscription
       uri:
-        url: "{{ secret_result.resources[0][secret_url_key] }}/{{ secret_name }}"
-        password: "{{ secret_result.resources[0][secret_auth_basic_pass_key] }}"
-        user: "{{ secret_result.resources[0][secret_auth_basic_user_key] }}"
+        url: "{{ secret_result.resources[0][secret_url_key] | b64decode }}/{{ secret_name }}"
+        password: "{{ secret_result.resources[0][secret_auth_basic_pass_key] | b64decode }}"
+        user: "{{ secret_result.resources[0][secret_auth_basic_user_key] | b64decode }}"
         method: POST
         body: "{{ subscription | to_json }}"
         force_basic_auth: yes
         status_code: 201
         body_format: json
       when: "subscription_result.status != 200"
-  when: "secret_result.resources[0][secret_auth_type_key] == 'basic'"
+  when: "(secret_result.resources[0][secret_auth_type_key] | b64decode) == 'basic'"
