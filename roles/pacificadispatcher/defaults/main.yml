@@ -8,7 +8,7 @@ secret_auth_type_key: type
 secret_auth_basic_user_key: user
 secret_auth_basic_pass_key: pass
 shared_pvc: dispatcher-shared-pvc
-image: pacifica/dispatcher-k8s:v0.1.2
+image: pacifica/dispatcher-k8s:v0.1.4
 command: ['pacifica-dispatcher-k8s']
 wait_services: []
 setup_init_containers: []
