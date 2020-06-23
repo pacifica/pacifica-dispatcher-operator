@@ -7,7 +7,7 @@ spec:
   size: 1
   secretName: notify-subscription-secret
   sharedPvc: dispatcher-shared-pvc
-  image: pacifica/dispatcher-k8s:v0.1.0
+  image: pacifica/dispatcher-k8s:v0.1.2
   waitServices: []
   env:
     - name: UPLOAD_URL
