@@ -1,6 +1,7 @@
 ---
 # defaults file for pacificadispatcher
 size: 1
+debug: false
 env: []
 secret_name: notify-subscription-secret
 secret_url_key: url

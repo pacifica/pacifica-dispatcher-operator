@@ -1,4 +1,4 @@
-FROM quay.io/operator-framework/ansible-operator:v0.17.1
+FROM quay.io/operator-framework/ansible-operator:v0.19.3
 
 COPY requirements.yml ${HOME}/requirements.yml
 RUN ansible-galaxy collection install -r ${HOME}/requirements.yml \
@@ -6,4 +6,4 @@ RUN ansible-galaxy collection install -r ${HOME}/requirements.yml \
 
 COPY watches.yaml ${HOME}/watches.yaml
 
-COPY roles/ ${HOME}/roles/
+COPY --chown=${USER_NAME}:root roles/ ${HOME}/roles/

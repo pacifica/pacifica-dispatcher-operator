@@ -26,8 +26,10 @@
       async: 2592000
       poll: 0
       notify: "Kill Registry Port Forward"
+      changed_when: false
     - name: Wait for Kubectl
       command: sleep 3
+      changed_when: false
     - name: Kubectl Pids
       pids:
         name: kubectl
@@ -35,6 +37,12 @@
     - name: Debug Registry Port Forward
       debug:
         msg: "{{ pids_of_kubectl }}"
+    - name: Wait for Localhost Registry
+      uri:
+        url: http://localhost:5000
+      retries: 500
+      register: result
+      until: (result.status|int) == 200
     - name: Build an image and push it to a private repo
       docker_image:
         build:
@@ -54,6 +62,7 @@
       vars:
         image: '{{ operator_image }}'
         pull_policy: '{{ operator_pull_policy }}'
+      changed_when: false
   handlers:
     - name: Kill Registry Port Forward
       command: "kill {{ item }}"

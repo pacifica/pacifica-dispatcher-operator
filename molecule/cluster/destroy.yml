@@ -38,3 +38,4 @@
         name: localhost:5000/pacifica/pacifica-dispatcher-operator
         tag: latest
         state: absent
+      ignore_errors: true
