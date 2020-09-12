@@ -1,8 +1,16 @@
 ---
+- name: Debug Combined env
+  debug:
+    msg: "{{ env+__int_env }}"
+  when: debug
+- name: Debug Combination init containers
+  debug:
+    msg: "{{ __init_containers+setup_init_containers }}"
+  when: debug
 - name: Define Pacifica Dispatcher Frontend
   k8s:
     definition:
-      kind: Deployment
+      kind: StatefulSet
       apiVersion: apps/v1
       metadata:
         name: '{{ meta.name }}-dispatcher'
