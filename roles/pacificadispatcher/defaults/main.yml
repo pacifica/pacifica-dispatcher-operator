@@ -20,7 +20,7 @@ subscription:
 __init_containers:
   - name: wait-for-services
     image: busybox:1.28
-    env: "{{ _pacifica_dispatcher_io_pacificadispatcher_spec.env | default([]) }}"
+    env: "{{ _dispatcher_pacifica_io_pacificadispatcher_spec.env | default([]) }}"
     command:
       - sh
       - -c

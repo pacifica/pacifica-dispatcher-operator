@@ -1,7 +1,7 @@
 ---
 - name: Debug Combined env
   debug:
-    msg: "{{ _pacifica_dispatcher_io_pacificadispatcher_spec.env | default([]) }}"
+    msg: "{{ _dispatcher_pacifica_io_pacificadispatcher_spec.env | default([]) }}"
   when: debug
 - name: Debug Combination init containers
   debug:
@@ -28,7 +28,7 @@
             containers:
               - name: "dispatcher"
                 image: "{{ image }}"
-                env: "{{ _pacifica_dispatcher_io_pacificadispatcher_spec.env | default([]) }}"
+                env: "{{ _dispatcher_pacifica_io_pacificadispatcher_spec.env | default([]) }}"
                 command: "{{ command }}"
                 volumeMounts:
                   - name: shareddata
