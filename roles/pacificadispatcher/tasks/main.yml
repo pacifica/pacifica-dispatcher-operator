@@ -1,7 +1,7 @@
 ---
 - name: Debug Combined env
   debug:
-    msg: "{{ env+__int_env }}"
+    msg: "{{ _pacifica_dispatcher_io_pacificadispatcher_spec.env | default([]) }}"
   when: debug
 - name: Debug Combination init containers
   debug:
