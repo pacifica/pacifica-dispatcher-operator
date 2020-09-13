@@ -28,7 +28,7 @@
             containers:
               - name: "dispatcher"
                 image: "{{ image }}"
-                env: "{{ env+__int_env }}"
+                env: "{{ _pacifica_dispatcher_io_pacificadispatcher_spec.env | default([]) }}"
                 command: "{{ command }}"
                 volumeMounts:
                   - name: shareddata

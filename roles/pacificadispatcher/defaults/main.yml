@@ -2,7 +2,6 @@
 # defaults file for pacificadispatcher
 size: 1
 debug: false
-env: []
 secret_name: notify-subscription-secret
 secret_url_key: url
 secret_auth_type_key: type
@@ -18,11 +17,10 @@ subscription:
   jsonpath: '$.data'
   target_url: http://dispatcher.example.com/receive
 
-__int_env: []
 __init_containers:
   - name: wait-for-services
     image: busybox:1.28
-    env: "{{ env+__int_env }}"
+    env: "{{ _pacifica_dispatcher_io_pacificadispatcher_spec.env | default([]) }}"
     command:
       - sh
       - -c
