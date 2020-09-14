@@ -20,6 +20,7 @@ subscription:
 __init_containers:
   - name: wait-for-services
     image: busybox:1.28
+    resources: "{{ resources | default ({}) }}"
     env: "{{ _dispatcher_pacifica_io_pacificadispatcher_spec.env | default([]) }}"
     command:
       - sh

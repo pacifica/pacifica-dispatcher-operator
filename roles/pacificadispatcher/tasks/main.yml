@@ -20,7 +20,6 @@
         selector:
           matchLabels:
             app: "dispatcher"
-        resources: "{{ resources | default ({}) }}"
         template:
           metadata:
             labels:
@@ -31,6 +30,7 @@
                 image: "{{ image }}"
                 env: "{{ _dispatcher_pacifica_io_pacificadispatcher_spec.env | default([]) }}"
                 command: "{{ command }}"
+                resources: "{{ resources | default ({}) }}"
                 volumeMounts:
                   - name: shareddata
                     mountPath: /data
